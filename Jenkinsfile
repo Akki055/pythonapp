@@ -41,14 +41,6 @@ pipeline {
             }
         }
 
-        stage('Checkout K8S Manifests') {
-            steps {
-                git credentialsId: 'git-cred',
-                    url: 'https://github.com/Akki055/pythonapp.git',
-                    branch: 'master'
-            }
-        }
-
         stage('Update K8S Manifest') {
             steps {
                 script {
