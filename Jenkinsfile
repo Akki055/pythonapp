@@ -1,69 +1,75 @@
 pipeline {
-    
-    agent any 
-    
+    agent any
+
     environment {
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
-    
+
     stages {
         
-        stage('Checkout'){
-           steps {
-                git credentialsId: 'git-cred', 
-                url: 'https://github.com/Akki055/pythonapp.git',
-                branch: 'master'
-           }
-        }
-
-        stage('Build Docker'){
-            steps{
-                script{
-                    withDockerRegistry(credentialsId: 'doc-cred') {
-                     sh '''
-                     echo 'Buid Docker Image'
-                     docker build -t akki058/cicd-e2e:${BUILD_NUMBER} .
-                     '''
-                  }
-                }
+        stage('Checkout Source') {
+            steps {
+                git credentialsId: 'git-cred',
+                    url: 'https://github.com/Akki055/pythonapp.git',
+                    branch: 'master'
             }
         }
 
-        stage('Push the artifacts'){
-           steps{
-                script{
+        stage('Build Docker Image') {
+            steps {
+                script {
                     withDockerRegistry(credentialsId: 'doc-cred') {
-                     sh '''
-                     echo 'Push to Repo'
-                     docker push akki058/cicd-e2e:${BUILD_NUMBER}
-                     '''
+                        sh '''
+                        echo 'Building Docker Image'
+                        docker build -t akki058/cicd-e2e:${BUILD_NUMBER} .
+                        '''
                     }
                 }
             }
         }
-        
-        stage('Checkout K8S manifest SCM'){
+
+        stage('Push Docker Image') {
             steps {
-                git credentialsId: 'git-cred', 
-                url: 'https://github.com/Akki055/pythonapp.git',
-                branch: 'master'
+                script {
+                    withDockerRegistry(credentialsId: 'doc-cred') {
+                        sh '''
+                        echo 'Pushing Docker Image to Repository'
+                        docker push akki058/cicd-e2e:${BUILD_NUMBER}
+                        '''
+                    }
+                }
             }
         }
-        
-        stage('Update K8S manifest & push to Repo'){
+
+        stage('Checkout K8S Manifests') {
             steps {
-                script{
+                git credentialsId: 'git-cred',
+                    url: 'https://github.com/Akki055/pythonapp.git',
+                    branch: 'master'
+            }
+        }
+
+        stage('Update K8S Manifest & Push') {
+            steps {
+                script {
                     withCredentials([usernamePassword(credentialsId: 'git-cred', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh '''
                         cd deploy
+                        echo 'Current deploy.yaml:'
                         cat deploy.yaml
-                        sed -i 's|\(image: akki058/cicd-e2e:\).*|\1'${BUILD_NUMBER}'|' deploy.yaml
+                        
+                        echo 'Updating deploy.yaml with new image tag: ${BUILD_NUMBER}'
+                        sed -i 's|\\(image: akki058/cicd-e2e:\\).*|\\1${BUILD_NUMBER}|' deploy.yaml
+                        
+                        echo 'Updated deploy.yaml:'
                         cat deploy.yaml
+
                         git add deploy.yaml
-                        git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
-                        git remote -v
-                        git push https://github.com/Akki055/pythonapp.git HEAD:master
-                        ''' 
+                        git commit -m "Updated deploy.yaml with new image tag ${BUILD_NUMBER}"
+                        
+                        # Using HTTPS URL with credentials to push changes
+                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Akki055/pythonapp.git HEAD:master
+                        '''
                     }
                 }
             }
