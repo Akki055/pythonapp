@@ -19,10 +19,12 @@ pipeline {
         stage('Build Docker'){
             steps{
                 script{
-                    sh '''
-                    echo 'Buid Docker Image'
-                    docker build -t akki058/cicd-e2e:${BUILD_NUMBER} .
-                    '''
+                    withDockerRegistry(credentialsId: 'doc-cred') {
+                     sh '''
+                     echo 'Buid Docker Image'
+                     docker build -t akki058/cicd-e2e:${BUILD_NUMBER} .
+                     '''
+                  }
                 }
             }
         }
@@ -30,10 +32,12 @@ pipeline {
         stage('Push the artifacts'){
            steps{
                 script{
-                    sh '''
-                    echo 'Push to Repo'
-                    docker push akki058/cicd-e2e:${BUILD_NUMBER}
-                    '''
+                    withDockerRegistry(credentialsId: 'doc-cred') {
+                     sh '''
+                     echo 'Push to Repo'
+                     docker push akki058/cicd-e2e:${BUILD_NUMBER}
+                     '''
+                    }
                 }
             }
         }
