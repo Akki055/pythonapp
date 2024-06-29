@@ -54,6 +54,7 @@ pipeline {
                 script {
                     // Add debug steps to print out the current directory and files
                     sh 'echo "Current directory:"'
+                    sh 'cd deploy'
                     sh 'pwd'
                     sh 'echo "Files in directory:"'
                     sh 'ls -l'
