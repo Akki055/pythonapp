@@ -55,6 +55,7 @@ pipeline {
                 script{
                     withCredentials([usernamePassword(credentialsId: 'git-cred', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh '''
+                        dir('https://github.com/Akki055/pythonapp/tree/master/deploy') {
                         cat deploy.yaml
                         sed -i '' "s/32/${BUILD_NUMBER}/g" deploy.yaml
                         cat deploy.yaml
