@@ -59,7 +59,7 @@ pipeline {
                         cat deploy.yaml
                         
                         echo 'Updating deploy.yaml with new image tag: ${BUILD_NUMBER}'
-                        sed -i 's|\\(image: akki058/cicd-e2e:\\).*|\\1${BUILD_NUMBER}|' deploy.yaml
+                        sed -i 's|\\(image: akki058/cicd-e2e:\\).*|\\${BUILD_NUMBER}|' deploy.yaml
                         
                         echo 'Updated deploy.yaml:'
                         cat deploy.yaml
