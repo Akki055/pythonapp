@@ -46,26 +46,21 @@ pipeline {
                 script {
                     // Navigate to the deploy directory
                     dir('deploy') {
-                        // Print out the current directory for debugging
-                        sh 'echo "Current directory: $(pwd)"'
-                        sh 'ls -l'
-
-                        // Read the deploy.yaml file
-                        def deployYaml = readYaml file: 'deploy.yaml'
+                        // Use sed to update the image tag in deploy.yaml
+                        sh '''
+                        echo "Updating image tag in deploy.yaml to akki058/cicd-e2e:${BUILD_NUMBER}"
                         
-                        // Print the existing YAML structure for debugging
-                        echo 'Current deploy.yaml content:'
-                        echo deployYaml.toString()
+                        # Print the current content for debugging
+                        echo "Current deploy.yaml content:"
+                        cat deploy.yaml
                         
-                        // Update the image tag in the deployment spec
-                        deployYaml.spec.template.spec.containers[0].image = "akki058/cicd-e2e:${BUILD_NUMBER}"
+                        # Use sed to find and replace the image tag in the deploy.yaml
+                        sed -i 's|image: akki058/cicd-e2e:.*|image: akki058/cicd-e2e:${BUILD_NUMBER}|' deploy.yaml
                         
-                        // Write the updated YAML back to the file
-                        writeYaml file: 'deploy.yaml', data: deployYaml
-                        
-                        // Print the updated YAML for verification
-                        sh 'echo "Updated deploy.yaml content:"'
-                        sh 'cat deploy.yaml'
+                        # Print the updated content for verification
+                        echo "Updated deploy.yaml content:"
+                        cat deploy.yaml
+                        '''
                     }
                 }
             }
