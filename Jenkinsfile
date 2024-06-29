@@ -49,21 +49,30 @@ pipeline {
             }
         }
 
-        stage('Update K8S Manifest & Push') {
+        stage('Update K8S Manifest') {
+            steps {
+                script {
+                    // Read the deploy.yaml file
+                    def deployYaml = readYaml file: 'deploy/deploy.yaml'
+                    
+                    // Update the image tag in the deployment spec
+                    deployYaml.spec.template.spec.containers[0].image = "akki058/cicd-e2e:${BUILD_NUMBER}"
+                    
+                    // Write the updated YAML back to the file
+                    writeYaml file: 'deploy/deploy.yaml', data: deployYaml
+                    
+                    // Print the updated YAML for verification
+                    sh "cat deploy/deploy.yaml"
+                }
+            }
+        }
+
+        stage('Commit and Push Changes') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'git-cred', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh '''
                         cd deploy
-                        echo 'Current deploy.yaml:'
-                        cat deploy.yaml
-                        
-                        echo 'Updating deploy.yaml with new image tag: ${BUILD_NUMBER}'
-                        sed -i 's|\\(image: akki058/cicd-e2e:\\).*|\\${BUILD_NUMBER}|' deploy.yaml
-                        
-                        echo 'Updated deploy.yaml:'
-                        cat deploy.yaml
-
                         git add deploy.yaml
                         git commit -m "Updated deploy.yaml with new image tag ${BUILD_NUMBER}"
                         
