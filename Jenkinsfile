@@ -6,7 +6,7 @@ pipeline {
     }
 
     stages {
-        
+
         stage('Checkout Source') {
             steps {
                 git credentialsId: 'git-cred',
@@ -41,11 +41,29 @@ pipeline {
             }
         }
 
+        stage('Checkout K8S Manifests') {
+            steps {
+                git credentialsId: 'git-cred',
+                    url: 'https://github.com/Akki055/pythonapp.git',
+                    branch: 'master'
+            }
+        }
+
         stage('Update K8S Manifest') {
             steps {
                 script {
+                    // Add debug steps to print out the current directory and files
+                    sh 'echo "Current directory:"'
+                    sh 'pwd'
+                    sh 'echo "Files in directory:"'
+                    sh 'ls -l'
+                    
                     // Read the deploy.yaml file
                     def deployYaml = readYaml file: 'deploy/deploy.yaml'
+                    
+                    // Print the existing YAML structure for debugging
+                    echo 'Current deploy.yaml content:'
+                    echo deployYaml.toString()
                     
                     // Update the image tag in the deployment spec
                     deployYaml.spec.template.spec.containers[0].image = "akki058/cicd-e2e:${BUILD_NUMBER}"
@@ -54,7 +72,8 @@ pipeline {
                     writeYaml file: 'deploy/deploy.yaml', data: deployYaml
                     
                     // Print the updated YAML for verification
-                    sh "cat deploy/deploy.yaml"
+                    sh 'echo "Updated deploy.yaml content:"'
+                    sh 'cat deploy/deploy.yaml'
                 }
             }
         }
@@ -74,6 +93,12 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Pipeline failed. Check the logs for errors."
         }
     }
 }
